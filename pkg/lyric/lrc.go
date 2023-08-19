@@ -2,7 +2,6 @@ package lyric
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Parses an LRC file
@@ -54,9 +55,7 @@ func ReadLRC(reader io.Reader) (lrcFile *LRCFile, err error) {
 		if err != nil {
 			continue
 		}
-		for _, fragment := range lineFragments {
-			fragments = append(fragments, fragment)
-		}
+		fragments = append(fragments, lineFragments...)
 		lineNo++
 	}
 
@@ -125,9 +124,7 @@ func readLRCLine(line string, lineNo int) (fragments []LRCFragment, err error) {
 	}
 
 	lineFragments, err := parseContentLine(line, tm)
-	for _, fragment := range lineFragments {
-		fragments = append(fragments, fragment)
-	}
+	fragments = append(fragments, lineFragments...)
 	return
 }
 

@@ -3,11 +3,9 @@ package utils
 import (
 	"embed"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -26,6 +24,7 @@ import (
 	"github.com/go-flac/flacpicture"
 	"github.com/go-musicfox/netease-music/service"
 	getFolderSize "github.com/markthree/go-get-folder-size/src"
+	"github.com/pkg/errors"
 	"github.com/skip2/go-qrcode"
 )
 
@@ -252,7 +251,7 @@ func getCacheUri(songId int64) (uri string, ok bool) {
 		}
 		return
 	}
-	files, err := ioutil.ReadDir(cacheDir)
+	files, err := os.ReadDir(cacheDir)
 	if err != nil || len(files) == 0 {
 		return
 	}
@@ -335,7 +334,6 @@ func SetSongTag(file *os.File, song structs.Song) {
 			return
 		}
 		defer metadata.Close()
-		defer metadata.SaveFile(file.Name())
 		_ = metadata.SetAlbum(song.Album.Name)
 		_ = metadata.SetArtist(song.ArtistName())
 		_ = metadata.SetAlbumArtist(song.Album.ArtistName())
@@ -350,11 +348,16 @@ func SetSongTag(file *os.File, song structs.Song) {
 				_ = metadata.(*songtag.FLAC).SetFlacPicture(img)
 			}
 		}
+		_ = metadata.SaveFile(file.Name() + "-tmp")
+		_ = os.Rename(file.Name()+"-tmp", file.Name())
 	}
 }
 
 func downloadMusic(url, musicType string, song structs.Song, downloadDir string) error {
 	filename := fmt.Sprintf("%s-%s.%s", song.Name, song.ArtistName(), musicType)
+	// Windows Linux 均不允许文件名中出现 / \ 替换为 _
+	filename = strings.Replace(filename, "/", "_", -1)
+	filename = strings.Replace(filename, "\\", "_", -1)
 	err := DownloadFile(url, filename, downloadDir)
 	if err != nil {
 		return err
