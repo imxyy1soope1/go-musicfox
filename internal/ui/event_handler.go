@@ -325,6 +325,7 @@ func (h *EventHandler) spaceKeyHandle() {
 		main          = h.netease.MustMain()
 		menu          = main.CurMenu()
 		player        = h.netease.player
+		isSameSong    bool
 	)
 	if me, ok := menu.(SongsMenu); ok {
 		songs = me.Songs()
@@ -346,7 +347,7 @@ func (h *EventHandler) spaceKeyHandle() {
 		return
 	}
 
-	if inPlayingMenu && songs[selectedIndex].Id == player.playlist[player.curSongIndex].Id {
+	if isSameSong = songs[selectedIndex].Id == player.playlist[player.curSongIndex].Id; inPlayingMenu && isSameSong {
 		switch player.State() {
 		case types.Paused:
 			player.Resume()
@@ -372,7 +373,9 @@ func (h *EventHandler) spaceKeyHandle() {
 	if player.mode == types.PmIntelligent {
 		player.SetPlayMode(0)
 	}
-	_ = player.PlaySong(player.playlist[selectedIndex], DurationNext)
+	if !isSameSong {
+		_ = player.PlaySong(player.playlist[selectedIndex], DurationNext)
+	}
 }
 
 func (h *EventHandler) MouseMsgHandle(msg tea.MouseMsg, a *model.App) (stopPropagation bool, newPage model.Page, cmd tea.Cmd) {
