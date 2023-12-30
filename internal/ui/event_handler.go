@@ -350,7 +350,7 @@ func (h *EventHandler) spaceKeyHandle() {
 		return
 	}
 
-	if inPlayingMenu && songs[selectedIndex].Id == player.CurSong().Id {
+	if isSameSong := len(player.Playlist()) > 0 && songs[selectedIndex].Id == player.CurSong().Id; inPlayingMenu && isSameSong {
 		switch player.State() {
 		case types.Paused:
 			player.Resume()
