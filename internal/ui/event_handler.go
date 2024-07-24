@@ -333,33 +333,33 @@ func (h *EventHandler) spaceKeyHandle() {
 
 	selectedIndex := menu.RealDataIndex(main.SelectedIndex())
 	if me, ok := menu.(Menu); !ok || !me.IsPlayable() || len(songs) == 0 || selectedIndex > len(songs)-1 {
-		if player.curSongIndex > len(player.playlist)-1 {
+		if player.curSong.index > len(player.playlist)-1 {
 			return
 		}
 		switch player.State() {
 		case types.Paused:
 			h.netease.player.Resume()
 		case types.Playing:
-			h.netease.player.Paused()
+			h.netease.player.Pause()
 		case types.Stopped:
-			_ = player.PlaySong(player.playlist[player.curSongIndex], DurationNext)
+			_ = player.PlaySong(player.curSong, DurationNext)
 		}
 		return
 	}
 
-	if isSameSong = len(player.playlist) > 0 && songs[selectedIndex].Id == player.playlist[player.curSongIndex].Id; inPlayingMenu && isSameSong {
+	if isSameSong = len(player.playlist) > 0 && songs[selectedIndex].Id == player.playlist[player.curSong.index].Id; inPlayingMenu && isSameSong {
 		switch player.State() {
 		case types.Paused:
 			player.Resume()
 		case types.Playing:
-			player.Paused()
+			player.Pause()
 		case types.Stopped:
-			_ = player.PlaySong(player.playlist[player.curSongIndex], DurationNext)
+			_ = player.PlaySong(player.curSong, DurationNext)
 		}
 		return
 	}
 
-	player.curSongIndex = selectedIndex
+	player.curSong.index = selectedIndex
 	player.playingMenuKey = menu.GetMenuKey()
 	if me, ok := menu.(Menu); ok {
 		player.playingMenu = me
@@ -374,7 +374,7 @@ func (h *EventHandler) spaceKeyHandle() {
 		player.SetPlayMode(0)
 	}
 	if !isSameSong {
-		_ = player.PlaySong(player.playlist[selectedIndex], DurationNext)
+		_ = player.PlaySong(newSong(selectedIndex, player.playlist[selectedIndex], nil, nil), DurationNext)
 	}
 }
 
