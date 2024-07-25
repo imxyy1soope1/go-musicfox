@@ -165,7 +165,7 @@ func (h *EventHandler) handle(ot OperateType) (bool, model.Page, tea.Cmd) {
 			if !player.playlistUpdateAt.IsZero() {
 				subTitle = player.playlistUpdateAt.Format("[更新于2006-01-02 15:04:05]")
 			}
-			main.EnterMenu(NewCurPlaylist(newBaseMenu(h.netease), player.playlist), &model.MenuItem{Title: "当前播放列表", Subtitle: subTitle})
+			main.EnterMenu(NewCurPlaylist(newBaseMenu(h.netease), player.Playlist()), &model.MenuItem{Title: "当前播放列表", Subtitle: subTitle})
 			player.LocatePlayingSong()
 		}
 	case OperateTypeSpace:
@@ -189,7 +189,7 @@ func (h *EventHandler) handle(ot OperateType) (bool, model.Page, tea.Cmd) {
 	case OperateTypeNext:
 		player.NextSong(true)
 	case OperateTypeSwitchPlayMode:
-		player.SetPlayMode(0)
+		player.SwitchMode()
 	case OperateTypeIntelligence:
 		newPage := player.Intelligence(false)
 		return true, newPage, app.Tick(time.Nanosecond)
@@ -333,7 +333,7 @@ func (h *EventHandler) spaceKeyHandle() {
 
 	selectedIndex := menu.RealDataIndex(main.SelectedIndex())
 	if me, ok := menu.(Menu); !ok || !me.IsPlayable() || len(songs) == 0 || selectedIndex > len(songs)-1 {
-		if player.curSong.index > len(player.playlist)-1 {
+		if player.CurSongIndex() > len(player.Playlist())-1 {
 			return
 		}
 		switch player.State() {
@@ -342,39 +342,39 @@ func (h *EventHandler) spaceKeyHandle() {
 		case types.Playing:
 			h.netease.player.Pause()
 		case types.Stopped:
-			_ = player.PlaySong(player.curSong, DurationNext)
+			_ = player.PlaySong(player.CurSong(), DurationNext)
 		}
 		return
 	}
 
-	if isSameSong = len(player.playlist) > 0 && songs[selectedIndex].Id == player.playlist[player.curSong.index].Id; inPlayingMenu && isSameSong {
+	if isSameSong = len(player.Playlist()) > 0 && songs[selectedIndex].Id == player.Playlist()[player.CurSongIndex()].Id; inPlayingMenu && isSameSong {
 		switch player.State() {
 		case types.Paused:
 			player.Resume()
 		case types.Playing:
 			player.Pause()
 		case types.Stopped:
-			_ = player.PlaySong(player.curSong, DurationNext)
+			_ = player.PlaySong(player.CurSong(), DurationNext)
 		}
 		return
 	}
 
-	player.curSong.index = selectedIndex
+	player.SetCurSongIndex(selectedIndex)
 	player.playingMenuKey = menu.GetMenuKey()
 	if me, ok := menu.(Menu); ok {
 		player.playingMenu = me
 	}
 
-	newPlaylists := make([]structs.Song, len(songs))
-	copy(newPlaylists, songs)
-	player.playlist = newPlaylists
+	newPlaylist := make([]structs.Song, len(songs))
+	copy(newPlaylist, songs)
+	player.SetPlaylist(newPlaylist)
 
 	player.playlistUpdateAt = time.Now()
-	if player.mode == types.PmIntelligent {
-		player.SetPlayMode(0)
+	if player.Mode() == types.PmIntelligent {
+		player.SwitchMode()
 	}
 	if !isSameSong {
-		_ = player.PlaySong(newSong(selectedIndex, player.playlist[selectedIndex], nil, nil), DurationNext)
+		player.StartPlay()
 	}
 }
 
